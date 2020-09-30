@@ -1,15 +1,15 @@
-FROM golang:1.14-alpine AS builder
+FROM golang:1.15-alpine AS builder
 
-ADD . /Users/suryapandian/persona/Go/recipes
+ADD . /go/src/github.com/hellofreshdevtests/suryapandian-recipe-count-test-2020
 
-WORKDIR /Users/suryapandian/persona/Go/recipes
+WORKDIR /go/src/github.com/hellofreshdevtests/suryapandian-recipe-count-test-2020
 
 RUN go build -mod=vendor -o cli .
+
 FROM alpine:latest
+
 WORKDIR /root/
-COPY --from=builder /Users/suryapandian/persona/Go/recipes . 
 
-CMD ["pwd"]
-CMD ["ls"]
+COPY --from=builder /go/src/github.com/hellofreshdevtests/suryapandian-recipe-count-test-2020 . 
 
-ENTRYPOINT [ "./cli", "-search=Chicken", "-file=testData.json", "-time=7AM-12AM"]
+ENTRYPOINT [ "./cli"]

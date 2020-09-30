@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
 	"recipes.com/adapters"
 	"recipes.com/dtos"
+	_ "recipes.com/indexer"
 )
 
 type cookbook struct {
@@ -20,38 +22,27 @@ func newcookbook(recipes []dtos.Recipe) *cookbook {
 }
 
 func main() {
-	//input, err := ioutil.ReadFile("/Users/suryapandian/Downloads/hf.json")
-	fileName := flag.String("file", "testData.json", "fixture file path")
-	searchStrs := flag.String("search", "Steak", "search terms")
-	postcode := flag.String("postcode", "10158", "postcode")
-	timeRange := flag.String("time", "9AM-4PM", "time range")
-	flag.Parse()
-	fmt.Println(*searchStrs, *fileName, *timeRange)
-
-	input, err := ioutil.ReadFile("./test/" + *fileName)
-	if err != nil {
-		fmt.Println("error while reading file")
+	fileName := "testData.json"
+	if value, ok := os.LookupEnv("FILE_NAME"); ok {
+		fileName = value
 	}
 
-	recipes := []dtos.Recipe{}
-	err = json.Unmarshal(input, &recipes)
+	inputJson, err := ioutil.ReadFile("./test/" + fileName)
 	if err != nil {
-		fmt.Println("error while reading file")
+		log.Fatal(err)
 	}
-	fmt.Println("len", len(recipes))
 
-	cookbook := newcookbook(recipes)
-	result := dtos.CookbookDetails{}
-	result.UniqueRecipeCount, _ = cookbook.c.GetNumOfUniqueRecipes()
-	result.BusiestPostCode, _ = cookbook.c.GetPostcodeByMaxDelivery()
-	result.CountPerRecipe, _ = cookbook.c.GetCountByRecipeName()
-	result.MatchByName, _ = cookbook.c.SearchByName(*searchStrs)
-	result.CountPerPostCodeAndTime, _ = cookbook.c.GetRecipesByPostcodeTime(*postcode, *timeRange)
-
-	d, err := json.MarshalIndent(result, "", "    ")
+	var recipes []dtos.Recipe
+	err = json.Unmarshal(inputJson, &recipes)
 	if err != nil {
-		fmt.Errorf("Error while marshalling json %v \n", err)
+		log.Fatal(err)
 	}
-	fmt.Println("result", string(d))
 
+	result := newcookbook(recipes).c.FetchResult()
+	resultJson, err := json.MarshalIndent(result, "", "    ")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("result", string(resultJson))
 }
